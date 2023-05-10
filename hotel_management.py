@@ -12,6 +12,7 @@ def execute_query (query):
 
     cursor = connection.cursor()
     cursor.execute(query)
+    connection.commit()
     record = cursor.fetchall()
     return record
 
@@ -80,14 +81,17 @@ class roomGateway:
     def insert_room(self, client:Clients):
         element = (Room.name )
         insert_query = '''INSERT INTO Room (name_room)  
-                          VALUES(%s)''' % element
+                          VALUES(DEFAULT,%s)''' % element
 
         execute_query(insert_query)
         
-    def create_room(self):
+    def create_room():
         i = input("nome Room: ")
-        c = Room(i)
-        self.insert_room(c)
+        insert_query = '''INSERT INTO Room (name_room)  
+                                  VALUES('%s')''' %i
+
+        execute_query(insert_query)
+
     
 
     def set_room(self):
@@ -113,7 +117,7 @@ class roomGateway:
         insert_query = "SELECT * FROM Room WHERE room_id=+" + room_id
         print(execute_query(insert_query))
         
-    def all_room(self):
+    def all_room():
         insert_query = "SELECT * FROM Room"
         print(execute_query(insert_query))
         
@@ -255,4 +259,8 @@ def menu():
                     break
             else:
                 print("\nScelta non valida. Riprova.")
+                break
+
+
+
 menu()

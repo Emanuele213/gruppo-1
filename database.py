@@ -12,8 +12,7 @@ def execute_query(query):
 
     cursor = connection.cursor()
     cursor.execute(query)
-    record = cursor.fetchall()
-    return record
+    connection.commit()
 
  except (Exception, Error) as error:
     print("Error while connecting to PostgreSQL", error)
@@ -46,17 +45,22 @@ def create_Clients_table():
   
 def create_booking_table():
     query_booking = '''
-       CREATE TABLE IF NOT EXISTS Booking(
-           booking_id SERIAL PRIMARY KEY NOT NULL,
-           room_id INTEGER ,
-           client_id INTEGER,
-           date_of_booking TIMESTAMP NOT NULL
-           CONSTRAINT fk_room
-             FOREIGN KEY(room_id) 
-             REFERENCES Room(room_id) 
-           CONSTRAINT fk_clients
-             FOREIGN KEY(client_id) 
-             REFERENCES Client(client_id) 
-       )
+        CREATE TABLE IF NOT EXISTS Booking(
+            booking_id SERIAL PRIMARY KEY NOT NULL,
+            room_id INTEGER,
+            client_id INTEGER,
+            date_of_booking TIMESTAMP NOT NULL,
+            CONSTRAINT fk_room
+                FOREIGN KEY(room_id) 
+                REFERENCES Room(room_id),
+            CONSTRAINT fk_clients
+                FOREIGN KEY(client_id) 
+                REFERENCES Clients(client_id)
+        )
     '''
     execute_query(query_booking)
+
+
+create_room_table()
+create_Clients_table()
+create_booking_table()
