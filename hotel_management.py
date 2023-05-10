@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2 import Error
-
+import pandas as pd
 def execute_query(query):
     try:
         connection = psycopg2.connect(
@@ -14,12 +14,14 @@ def execute_query(query):
         cursor.execute(query)
         connection.commit()
 
-        # Aggiungi una condizione per evitare di eseguire `fetchall()` su una `INSERT` o `DELETE`
-        if 'INSERT' in query or 'DELETE' in query:
-            return None
-        else:
+        if 'SELECT' in query :
+           if 'NOT EXISTS' not in query:
             record = cursor.fetchall()
             return record
+           else:
+               return None
+        else:
+            return None
 
     except (Exception, Error) as error:
         print("Error while connecting to PostgreSQL", error)
@@ -38,7 +40,7 @@ class Clients:
 
 class ClientsGateway:
     def create_client(self):
-        i = input("inserisci valori first_name,second_name,dob,phone_number,email separati da virgola ")
+        i = input("inserisci valori first_name,second_name,dob,phone_number,email separati da virgola = ")
         elem=i.split(",")
         c=Clients(*elem)
         self.insert_client(c)
@@ -54,17 +56,16 @@ class ClientsGateway:
     
     def all_client(self):
         insert_query = "SELECT * FROM Clients"
-        print(execute_query(insert_query))
+        print((pd.DataFrame(execute_query(insert_query),columns=("id_client","first_name","second_name","dob","phone_number","email"))).to_string(index=False))
 
-#aggiungere controlli input
     def set_client(self):
         client_id = input("Inserisci l'id: ")
         while True:
             insert_query = "SELECT * from Clients WHERE client_id=" + client_id
-            print(execute_query(insert_query))
+            print((pd.DataFrame(execute_query(insert_query), columns=("client_id", "first_name", "second_name", "dob", "phone_number", "email"))).to_string(index=False))
             campo_modifica = input(" inserisci nome colonna da modificare: ")
             modifica = input(" inserisci nuovo dato: ")
-            insert_query = "UPDATE Clients SET " + campo_modifica + " = " + "'%s'" %modifica
+            insert_query = '''UPDATE Clients SET %s ='%s' WHERE client_id=%s'''%(campo_modifica,modifica,str(client_id))
             execute_query(insert_query)
             print("\nCliente modificato")
             new_modifica = input("Continuare a modificare Y/n?")
@@ -80,7 +81,7 @@ class ClientsGateway:
     def get_client(self):
         client_id = input("Inserisci l'id: ") 
         insert_query = "SELECT * FROM Clients WHERE client_id=" + client_id
-        print(execute_query(insert_query))
+        print((pd.DataFrame(execute_query(insert_query),columns=("id_client","first_name","second_name","dob","phone_number","email"))).to_string(index=False))
 
 
 class Room:
@@ -106,29 +107,34 @@ class roomGateway:
         room_id = input("Inserisci l'id: ")
         while True:
             insert_query = "SELECT * from Room WHERE room_id=" + room_id
-            print(execute_query(insert_query))
+            print((pd.DataFrame(execute_query(insert_query),columns=("room_id","name_room"))).to_string(index=False))
             campo_modifica = input(" inserisci nome colonna da modificare: ")
             modifica = input(" inserisci nuovo dato: ")
-            insert_query = "UPDATE Room SET " + campo_modifica + " = " + "'%s'" %modifica
+            insert_query = '''UPDATE Room SET %s ='%s' WHERE room_id=%s'''%(campo_modifica,modifica,str(room_id))
             execute_query(insert_query)
-            print(f"\nStanza modificata {execute_query(insert_query)}")
+            insert_query ="SELECT * from Room WHERE room_id=" + room_id
+            update=execute_query(insert_query)
+            print(f"\nStanza modificata {(pd.DataFrame(update,columns=('room_id','name_room'))).to_string(index=False)}")
             new_modifica = input("Continuare a modificare Y/n?")
             if (new_modifica == "n"):
                 break
 
     def delete_room(self):
         room_id = input("Inserisci l'id: ")
-        insert_query = "DELETE FROM Room WHERE room_id=" + room_id
+
+        insert_query = '''DELETE FROM Room 
+                           WHERE NOT EXISTS( SELECT room_id FROM booking WHERE room_id= %s) AND room_id=%s
+                           '''%(room_id,room_id)
         execute_query(insert_query)
         
     def get_room(self):
         room_id = input("Inserisci l'id: ")
         insert_query = "SELECT * FROM Room WHERE room_id=" + str(room_id)
-        print(execute_query(insert_query))
+        print((pd.DataFrame(execute_query(insert_query),columns=('room_id','name_room'))).sort_values(by='room_id').to_string(index=False))
         
     def all_room(self):
         insert_query = "SELECT * FROM Room"
-        print(execute_query(insert_query))
+        print((pd.DataFrame(execute_query(insert_query),columns=('room_id','name_room'))).sort_values(by='room_id').to_string(index=False))
         
 class Booking:
     def __init__(self,room_id,client_id,date_of_booking):
@@ -141,35 +147,40 @@ class BookingGateway():
         element = (booking.client_id,booking.room_id,booking.date_of_booking)
         insert_query = '''INSERT INTO Booking (client_id,room_id,date_of_booking)  
                           VALUES('%s','%s','%s')''' % element
-
         execute_query(insert_query)
 
     def create_Booking(self):
         i = input("Inserisci dati room_id,client_id,date_of_booking (separati da virgola) ")
         elem = i.split(",")
-        b = Booking(*elem)
-        self.insert_Booking(b)
-        print("\nPrenotazione creata")
+        query_test='''SELECT room_id FROM Booking WHERE room_id=%s '''%(elem[0])
+        print(execute_query(query_test))
+        if len(execute_query(query_test))>0:
+           print("Stanza occupata!!!")
+        elif len(execute_query('''SELECT client_id FROM Booking WHERE client_id=%s '''%(elem[1])))>0:
+            print("Il cliente ha già una camera !!")
+        else:
+           b = Booking(*elem)
+           self.insert_Booking(b)
+           print("\nPrenotazione creata")
 
     def all_booking(self):
         insert_query ='''SELECT c.first_name, r.name_room, b.date_of_booking
                            FROM Booking b
                            INNER JOIN Room r ON b.room_id=r.room_id
                            INNER JOIN Clients c ON c.client_id=b.client_id'''
-                           
-        print(f"\n{execute_query(insert_query)}")
-        
+        print((pd.DataFrame(execute_query(insert_query),columns=('Cliente', 'Stanza', 'date_of_booking'))).to_string(index=False))
+
     def set_Booking(self):
         booking_id = input("inserisci il booking id: ")
         while True:
             insert_query = "SELECT * from Booking WHERE booking_id=" + booking_id
-            print(execute_query(insert_query))
+            print((pd.DataFrame(execute_query(insert_query),columns=('booking_id','room_id','client_id','date_of_booking'))).to_string(index=False))
             campo_modifica = input(" inserisci nome colonna da modificare: ")
             modifica = input(" inserisci nuovo dato: ")
-            insert_query = "UPDATE Booking SET " + campo_modifica + " = " + "'%s'" %modifica
+            insert_query = '''UPDATE Booking SET %s ='%s' WHERE  NOT EXISTS( SELECT %s FROM booking WHERE %s= %s) AND booking_id=%s'''%(campo_modifica,modifica,campo_modifica,campo_modifica,modifica,booking_id)
             execute_query(insert_query)
-            new_modifica = input("continuare a modificare Y/N?")
-            if (new_modifica == "N"):
+            new_modifica = input("continuare a modificare y/n?")
+            if (new_modifica == "n"):
                 break
 
     def delete_Booking(self):
@@ -184,10 +195,8 @@ class BookingGateway():
                            INNER JOIN Room r ON b.room_id=r.room_id
                            INNER JOIN Clients c ON c.client_id=b.client_id
                            WHERE booking_id=''' + booking_id
-        print(execute_query(insert_query))
-        
-class Management():
-   pass
+        print((pd.DataFrame(execute_query(insert_query), columns=('Cliente','Stanza','date_of_booking'))).to_string(index=False))
+
 
 def menu():
     while True:
