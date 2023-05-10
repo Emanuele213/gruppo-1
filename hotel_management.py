@@ -13,10 +13,10 @@ def execute_query (query):
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
-    if cursor.rowcount==0 :
-       print("prova")
-       record = cursor.fetchall()
-       return record
+    
+    if 'INSERT' not in query or 'DELETE' not in query:
+      record = cursor.fetchall()
+      return record
 
  except (Exception, Error) as error:
     print("Error while connecting to PostgreSQL", error)
@@ -94,29 +94,29 @@ class roomGateway:
 
 
     def set_room(self):
-        room_id = int(input("Inserisci l'id"))
+        room_id = input("Inserisci l'id: ")
         while True:
             insert_query = "SELECT * from Room WHERE room_id=" + room_id
             print(execute_query(insert_query))
-            campo_modifica = input(" inserisci nome colonna da modificare")
-            modifica = input(" inserisci nuovo dato ")
-            insert_query = "UPDATE Room SET " + campo_modifica + " = " + modifica
+            campo_modifica = input(" inserisci nome colonna da modificare: ")
+            modifica = input(" inserisci nuovo dato: ")
+            insert_query = "UPDATE Room SET " + campo_modifica + " = " + "'%s'" %modifica
             execute_query(insert_query)
             new_modifica = input("continuare a modificare Y/N?")
             if (new_modifica == "N"):
                 break
 
     def delete_room(self):
-        room_id = int(input("Inserisci l'id"))
+        room_id = input("Inserisci l'id: ")
         insert_query = "DELETE FROM Room WHERE room_id=+" + room_id
         execute_query(insert_query)
         
     def get_room(self):
-        room_id = int(input("Inserisci l'id"))
-        insert_query = "SELECT * FROM Room WHERE room_id=+" + room_id
+        room_id = input("Inserisci l'id: ")
+        insert_query = "SELECT * FROM Room WHERE room_id=+" + str(room_id)
         print(execute_query(insert_query))
         
-    def all_room():
+    def all_room(self):
         insert_query = "SELECT * FROM Room"
         print(execute_query(insert_query))
         
@@ -128,8 +128,8 @@ class Booking:
 
 class BookingGateway():
     def insert_Booking(self, booking: Booking):
-        element = (booking.room_id,booking.client_id,booking.date_of_booking)
-        insert_query = '''INSERT INTO Booking (name)  
+        element = (booking.client_id,booking.room_id,booking.date_of_booking)
+        insert_query = '''INSERT INTO Booking (client_id,room_id,date_of_booking)  
                           VALUES('%s','%s','%s')''' % element
 
         execute_query(insert_query)
@@ -145,12 +145,12 @@ class BookingGateway():
         print(execute_query(insert_query))
         
     def set_Booking(self):
-        booking_id = int(input("inserisci il booking id: "))
+        booking_id = input("inserisci il booking id: ")
         while True:
             insert_query = "SELECT * from Booking WHERE booking_id=" + booking_id
             print(execute_query(insert_query))
-            campo_modifica = input(" inserisci nome colonna da modificare")
-            modifica = input(" inserisci nuovo dato ")
+            campo_modifica = input(" inserisci nome colonna da modificare: ")
+            modifica = input(" inserisci nuovo dato: ")
             insert_query = "UPDATE Booking SET " + campo_modifica + " = " + modifica
             execute_query(insert_query)
             new_modifica = input("continuare a modificare Y/N?")
@@ -158,12 +158,12 @@ class BookingGateway():
                 break
 
     def delete_Booking(self):
-        booking_id = int(input("inserisci il booking id: "))
-        insert_query = "DELETE FROM Booking WHERE booking_id=+" + booking_id
+        booking_id = input("inserisci il booking id: ")
+        insert_query = "DELETE FROM Booking WHERE booking_id=" + booking_id
         execute_query(insert_query)
 
     def get_Booking(self):
-        booking_id = int(input("inserisci il booking id: "))
+        booking_id = input("inserisci il booking id: ")
         insert_query = '''SELECT first_name.Client,name_room.Room,date_of_booking.Booking
                            FROM Booking b
                             INNER JOIN Room r ON b.room_id=r.room_id
