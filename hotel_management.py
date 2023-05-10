@@ -13,8 +13,10 @@ def execute_query (query):
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
-    record = cursor.fetchall()
-    return record
+    if cursor.rowcount==0 :
+       print("prova")
+       record = cursor.fetchall()
+       return record
 
  except (Exception, Error) as error:
     print("Error while connecting to PostgreSQL", error)
@@ -32,17 +34,18 @@ class Clients:
 
 
 class ClientsGateway:
-    def insert_client(self, client:Clients):
-        element = (client.first_name, client.second_name, client.dob,client.phone_number,client.email)
-        insert_query = '''INSERT INTO Clients (first_name,second_name,dob,phone_number,email)  
-                          VALUES(%s,%s,%s,%s,%s)''' % element
-        execute_query(insert_query)
-        
     def create_client(self):
         i = input("inserisci valori first_name,second_name,dob,phone_number,email separati da virgola ")
         elem=i.split(",")
         c=Clients(*elem)
         self.insert_client(c)
+    def insert_client(self, client:Clients):
+        element = (client.first_name, client.second_name, client.dob,client.phone_number,client.email)
+        insert_query = '''INSERT INTO Clients (first_name,second_name,dob,phone_number,email)  
+                          VALUES('%s','%s','%s','%s','%s')''' % element
+        execute_query(insert_query)
+        
+
     
     def all_client(self):
         insert_query = "SELECT * FROM Clients"
@@ -78,21 +81,17 @@ class Room:
         self.name_room=name_room
 
 class roomGateway:
-    def insert_room(self, client:Clients):
-        element = (Room.name )
-        insert_query = '''INSERT INTO Room (name_room)  
-                          VALUES(DEFAULT,%s)''' % element
-
-        execute_query(insert_query)
-        
-    def create_room():
+    def create_room(self):
         i = input("nome Room: ")
+        r = Room(i)
+        self.insert_room(r)
+    def insert_room(self, room:Room):
+        element = (room.name_room)
         insert_query = '''INSERT INTO Room (name_room)  
-                                  VALUES('%s')''' %i
+                                          VALUES('%s')''' %element
 
         execute_query(insert_query)
 
-    
 
     def set_room(self):
         room_id = int(input("Inserisci l'id"))
@@ -131,7 +130,7 @@ class BookingGateway():
     def insert_Booking(self, booking: Booking):
         element = (booking.room_id,booking.client_id,booking.date_of_booking)
         insert_query = '''INSERT INTO Booking (name)  
-                          VALUES(%s,%s,%s)''' % element
+                          VALUES('%s','%s','%s')''' % element
 
         execute_query(insert_query)
 
@@ -198,17 +197,17 @@ def menu():
                 print("7 - Esci")
                 choiceHotel = int(input("Scegli l'opzione con un numero: "))
                 if choiceHotel == 1:
-                    roomGateway.create_room()
+                    roomGateway().create_room()
                 elif choiceHotel == 2:
-                    roomGateway.all_room()
+                    roomGateway().all_room()
                 elif choiceHotel == 3:
-                    ClientsGateway.create_client()
+                    ClientsGateway().create_client()
                 elif choiceHotel == 4:
-                    ClientsGateway.all_client()
+                    ClientsGateway().all_client()
                 elif choiceHotel == 5:
-                    BookingGateway.create_Booking()
+                    BookingGateway().create_Booking()
                 elif choiceHotel == 6:
-                    BookingGateway.all_booking()
+                    BookingGateway().all_booking()
                 elif choiceHotel == 7:
                     break
             elif choice == "Stanze":
@@ -220,11 +219,11 @@ def menu():
                 choiceRoom = int(input("Scegli l'opzione con un numero: "))
                 
                 if choiceRoom == 1:
-                    roomGateway.set_room()
+                    roomGateway().set_room()
                 elif choiceRoom == 2:
-                      roomGateway.delete_room()
+                      roomGateway().delete_room()
                 elif choiceRoom == 3:
-                      roomGateway.get_room()
+                      roomGateway().get_room()
                 elif choiceRoom == 4:
                     break
             elif choice == "Cliente":
@@ -235,11 +234,11 @@ def menu():
             
                 choiceClient = int(input("Scegli l'opzione con un numero: "))
                 if choiceClient == 1:
-                    ClientsGateway.set_client()
+                    ClientsGateway().set_client()
                 elif choiceClient == 2:
-                    ClientsGateway.delete_client
+                    ClientsGateway().delete_client
                 elif choiceClient == 3:
-                    ClientsGateway.get_client()
+                    ClientsGateway().get_client()
                 elif choiceClient == 4:
                     break
                 
@@ -250,11 +249,11 @@ def menu():
                 print("4 - Esci")
                 choiceBooking = int(input("Scegli l'opzione con un numero: "))
                 if choiceBooking == 1:
-                    BookingGateway.set_Booking()
+                    BookingGateway().set_Booking()
                 elif choiceBooking == 2:
-                    BookingGateway.delete_Booking()
+                    BookingGateway().delete_Booking()
                 elif choiceBooking == 3:
-                    BookingGateway.get_Booking()
+                    BookingGateway().get_Booking()
                 elif choiceBooking == 4:
                     break
             else:

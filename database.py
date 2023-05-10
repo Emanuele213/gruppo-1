@@ -37,7 +37,7 @@ def create_Clients_table():
            first_name VARCHAR (100) NOT NULL,
            second_name VARCHAR (100) NOT NULL,
            dob TIMESTAMP NOT NULL,
-           phone_number SMALLINT NOT NULL,
+           phone_number TEXT NOT NULL,
            email VARCHAR (255) NOT NULL
        )
     '''
