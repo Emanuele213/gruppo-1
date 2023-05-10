@@ -1,5 +1,25 @@
 import psycopg2
+from psycopg2 import Error
 
+def execute_query(query):
+ try:
+    connection = psycopg2.connect(user="unicorn_user",
+                                   password="magical_password",
+                                   host="127.0.0.1",
+                                   port="5433",
+                                   database="training")
+
+
+    cursor = connection.cursor()
+    cursor.execute(query)
+    record = cursor.fetchall()
+    return record
+
+ except (Exception, Error) as error:
+    print("Error while connecting to PostgreSQL", error)
+ finally:
+      if connection is not None:
+        connection.close()
 
 def create_room_table():
     query_room = '''
@@ -8,9 +28,7 @@ def create_room_table():
            name_room VARCHAR (100) NOT NULL
        )
     '''
-    cursor = connection.cursor()
-    cursor.execute(query_room)
-    connection.commit()
+    execute_query(query_room)
 
 
 def create_Clients_table():
@@ -24,17 +42,9 @@ def create_Clients_table():
            email VARCHAR (255) NOT NULL
        )
     '''
-    cursor = connection.cursor()
-    cursor.execute(query_Clients)
-    connection.commit()
+    execute_query(query_Clients)
   
 def create_booking_table():
-    '''PRIMARY KEY (client_id, room_id),
-     FOREIGN KEY (client_id)
-         REFERENCES Clients (client_id),
-     FOREIGN KEY (room_id)
-         REFERENCES Room (room_id)'''
-
     query_booking = '''
        CREATE TABLE IF NOT EXISTS Booking(
            booking_id SERIAL PRIMARY KEY NOT NULL,
@@ -49,26 +59,4 @@ def create_booking_table():
              REFERENCES Client(client_id) 
        )
     '''
-    cursor = connection.cursor()
-    cursor.execute(query_booking)
-    connection.commit()
-
-
-try:
-    connection = psycopg2.connect(user="unicorn_user",
-                                  password="magical_password",
-                                  host="127.0.0.1",
-                                  port="5433",
-                                  database="training")
-    create_booking_table()
-    create_room_table()
-    create_booking_table()
-
-
-except (Exception, Error) as error:
-    print("Error while connecting to PostgreSQL", error)
-finally:
-    if (connection):
-        cursor.close()
-        connection.close()
-        print("PostgreSQL connection is closed")
+    execute_query(query_booking)
