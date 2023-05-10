@@ -13,7 +13,7 @@ This is the Docker Compose required for the Python training.
 ```bash
 # Start the Docker stack
 docker-compose -p python-traning up -d
-telnet localhost 5432
+telnet localhost 5433
 # Destroy the Docker stack
 docker-compose -p python-traning down
 ```
