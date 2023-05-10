@@ -1,28 +1,31 @@
 import psycopg2
 from psycopg2 import Error
 
-def execute_query (query):
- try:
-    connection = psycopg2.connect( user="postgres",
-                                   password="1234",
-                                   host="localhost",
-                                   port = 5433,
-                                   database="postgres")
+def execute_query(query):
+    try:
+        connection = psycopg2.connect(
+            user="postgres",
+            password="1234",
+            host="localhost",
+            port=5433,
+            database="postgres")
 
+        cursor = connection.cursor()
+        cursor.execute(query)
+        connection.commit()
 
-    cursor = connection.cursor()
-    cursor.execute(query)
-    connection.commit()
-    
-    if 'INSERT' not in query or 'DELETE' not in query:
-      record = cursor.fetchall()
-      return record
+        # Aggiungi una condizione per evitare di eseguire `fetchall()` su una `INSERT` o `DELETE`
+        if 'INSERT' in query or 'DELETE' in query:
+            return None
+        else:
+            record = cursor.fetchall()
+            return record
 
- except (Exception, Error) as error:
-    print("Error while connecting to PostgreSQL", error)
- finally:
-      if connection is not None:
-        connection.close()
+    except (Exception, Error) as error:
+        print("Error while connecting to PostgreSQL", error)
+    finally:
+        if connection is not None:
+            connection.close()
 
 class Clients:
     def __init__(self,first_name:str,second_name:str,dob,phone_number:int,email:str ):
@@ -39,6 +42,8 @@ class ClientsGateway:
         elem=i.split(",")
         c=Clients(*elem)
         self.insert_client(c)
+        print("\nCliente creato")
+        
     def insert_client(self, client:Clients):
         element = (client.first_name, client.second_name, client.dob,client.phone_number,client.email)
         insert_query = '''INSERT INTO Clients (first_name,second_name,dob,phone_number,email)  
@@ -53,26 +58,28 @@ class ClientsGateway:
 
 #aggiungere controlli input
     def set_client(self):
-        client_id = int(input("Inserisci l'id"))
+        client_id = input("Inserisci l'id: ")
         while True:
             insert_query = "SELECT * from Clients WHERE client_id=" + client_id
             print(execute_query(insert_query))
-            campo_modifica = input(" inserisci nome colonna da modificare")
-            modifica = input(" inserisci nuovo dato ")
-            insert_query = "UPDATE Clients SET " + campo_modifica + " = " + modifica
+            campo_modifica = input(" inserisci nome colonna da modificare: ")
+            modifica = input(" inserisci nuovo dato: ")
+            insert_query = "UPDATE Clients SET " + campo_modifica + " = " + "'%s'" %modifica
             execute_query(insert_query)
-            new_modifica = input("continuare a modificare Y/N?")
-            if (new_modifica == "N"):
+            print("\nCliente modificato")
+            new_modifica = input("Continuare a modificare Y/n?")
+            if (new_modifica == "n"):
                 break
 
     def delete_client(self):
-        client_id = int(input("Inserisci l'id"))
-        insert_query = "DELETE FROM Clients WHERE client_id=+" + client_id
+        client_id = input("Inserisci l'id: ")
+        insert_query = "DELETE FROM Clients WHERE client_id=" + client_id
         execute_query(insert_query)
+        print("\nCliente eliminato")
         
     def get_client(self):
-        client_id = int(input("Inserisci l'id"))
-        insert_query = "SELECT * FROM Clients WHERE client_id=+" + client_id
+        client_id = input("Inserisci l'id: ") 
+        insert_query = "SELECT * FROM Clients WHERE client_id=" + client_id
         print(execute_query(insert_query))
 
 
@@ -82,9 +89,11 @@ class Room:
 
 class roomGateway:
     def create_room(self):
-        i = input("nome Room: ")
+        i = input("\nNome stanza: ")
         r = Room(i)
         self.insert_room(r)
+        print("\nStanza creata")
+        
     def insert_room(self, room:Room):
         element = (room.name_room)
         insert_query = '''INSERT INTO Room (name_room)  
@@ -102,18 +111,19 @@ class roomGateway:
             modifica = input(" inserisci nuovo dato: ")
             insert_query = "UPDATE Room SET " + campo_modifica + " = " + "'%s'" %modifica
             execute_query(insert_query)
-            new_modifica = input("continuare a modificare Y/N?")
-            if (new_modifica == "N"):
+            print(f"\nStanza modificata {execute_query(insert_query)}")
+            new_modifica = input("Continuare a modificare Y/n?")
+            if (new_modifica == "n"):
                 break
 
     def delete_room(self):
         room_id = input("Inserisci l'id: ")
-        insert_query = "DELETE FROM Room WHERE room_id=+" + room_id
+        insert_query = "DELETE FROM Room WHERE room_id=" + room_id
         execute_query(insert_query)
         
     def get_room(self):
         room_id = input("Inserisci l'id: ")
-        insert_query = "SELECT * FROM Room WHERE room_id=+" + str(room_id)
+        insert_query = "SELECT * FROM Room WHERE room_id=" + str(room_id)
         print(execute_query(insert_query))
         
     def all_room(self):
@@ -139,10 +149,15 @@ class BookingGateway():
         elem = i.split(",")
         b = Booking(*elem)
         self.insert_Booking(b)
+        print("\nPrenotazione creata")
 
-    def all_booking():
-        insert_query = "SELECT * FROM Booking"
-        print(execute_query(insert_query))
+    def all_booking(self):
+        insert_query ='''SELECT c.first_name, r.name_room, b.date_of_booking
+                           FROM Booking b
+                           INNER JOIN Room r ON b.room_id=r.room_id
+                           INNER JOIN Clients c ON c.client_id=b.client_id'''
+                           
+        print(f"\n{execute_query(insert_query)}")
         
     def set_Booking(self):
         booking_id = input("inserisci il booking id: ")
@@ -151,7 +166,7 @@ class BookingGateway():
             print(execute_query(insert_query))
             campo_modifica = input(" inserisci nome colonna da modificare: ")
             modifica = input(" inserisci nuovo dato: ")
-            insert_query = "UPDATE Booking SET " + campo_modifica + " = " + modifica
+            insert_query = "UPDATE Booking SET " + campo_modifica + " = " + "'%s'" %modifica
             execute_query(insert_query)
             new_modifica = input("continuare a modificare Y/N?")
             if (new_modifica == "N"):
@@ -164,11 +179,11 @@ class BookingGateway():
 
     def get_Booking(self):
         booking_id = input("inserisci il booking id: ")
-        insert_query = '''SELECT first_name.Client,name_room.Room,date_of_booking.Booking
+        insert_query = '''SELECT c.first_name, r.name_room, b.date_of_booking
                            FROM Booking b
-                            INNER JOIN Room r ON b.room_id=r.room_id
-                            INNER JOIN Client c ON c.client_id=c.client_id
-                            WHERE booking_id=''' + booking_id
+                           INNER JOIN Room r ON b.room_id=r.room_id
+                           INNER JOIN Clients c ON c.client_id=b.client_id
+                           WHERE booking_id=''' + booking_id
         print(execute_query(insert_query))
         
 class Management():
@@ -177,18 +192,18 @@ class Management():
 def menu():
     while True:
         print("\nScegli una delle seguenti opzioni per modificare: ")
-        print("Hotel Manager")
+        print("1 - Hotel Manager")
         
-        print("\nGestione Stanze")
+        print("\n2 - Gestione Stanze")
                 
-        print("\nGestione Cliente")
+        print("\n3 - Gestione Cliente")
         
-        print("\nGestione Booking")
+        print("\n4 - Gestione Booking")
         
         choice = input("Inserisci opzione scelta: ")
         while True:
             if choice == "Hotel Manager":
-                print("1 - Crea stanza")
+                print("\n1 - Crea stanza")
                 print("2 - Visualizza stanze")
                 print("3 - Crea Persona")
                 print("4 - Visualiuzza Persone")
@@ -211,7 +226,7 @@ def menu():
                 elif choiceHotel == 7:
                     break
             elif choice == "Stanze":
-                print("1 - Aggiorna stanza")
+                print("\n1 - Aggiorna stanza")
                 print("2 - Elimina Stanza")
                 print("3 - Ricerca")
                 print("4 - Esci")
@@ -227,7 +242,7 @@ def menu():
                 elif choiceRoom == 4:
                     break
             elif choice == "Cliente":
-                print("1 - Aggiorna cliente")
+                print("\n1 - Aggiorna cliente")
                 print("2 - Elimina cliente")
                 print("3 - Ricerca")
                 print("4 - Esci")
@@ -236,14 +251,14 @@ def menu():
                 if choiceClient == 1:
                     ClientsGateway().set_client()
                 elif choiceClient == 2:
-                    ClientsGateway().delete_client
+                    ClientsGateway().delete_client()
                 elif choiceClient == 3:
                     ClientsGateway().get_client()
                 elif choiceClient == 4:
                     break
                 
             elif choice == "Booking":
-                print("1 - Aggiorna booking")
+                print("\n1 - Aggiorna booking")
                 print("2 - Elimina booking")
                 print("3 - Ricerca")
                 print("4 - Esci")
@@ -259,7 +274,5 @@ def menu():
             else:
                 print("\nScelta non valida. Riprova.")
                 break
-
-
 
 menu()
